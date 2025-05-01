@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, nextTick } from "vue";
 import { useStore } from "vuex";
 import { useRouter, useRoute } from "vue-router";
 import ToolEditor from "../components/tool_editor.vue";
@@ -240,17 +240,40 @@ onMounted(async () => {
         pageSize.value = fetchedProposal.pageSize;
       }
 
-      // If there's content, parse it and distribute to sections
+      // If there's content, parse it
       if (fetchedProposal.content) {
         try {
           const parsedContent = JSON.parse(fetchedProposal.content);
 
           // If the content has sections structure
-          if (parsedContent.sections) {
+          if (parsedContent.sections && parsedContent.blocks) {
             sections.value = parsedContent.sections;
             if (sections.value.length > 0) {
               activeSection.value = sections.value[0].id;
             }
+
+            // Distribute blocks to their respective sections
+            sections.value.forEach((section) => {
+              const sectionBlocks = parsedContent.blocks.filter(
+                (block) => block.sectionId === section.id
+              );
+              // Set the content directly on the section
+              section.content = sectionBlocks;
+
+              if (sectionBlocks.length > 0) {
+                // Create editor for this section if it doesn't exist
+                if (!toolEditors.value.has(section.id)) {
+                  toolEditors.value.set(section.id, null);
+                }
+                // Set the content for this section
+                nextTick(() => {
+                  const editor = toolEditors.value.get(section.id);
+                  if (editor) {
+                    editor.blocks = sectionBlocks;
+                  }
+                });
+              }
+            });
           } else {
             // Handle old format (backward compatibility)
             const contentBySection = {};
