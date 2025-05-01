@@ -2318,43 +2318,80 @@ watch(
 
 /* Editor toolbar and settings styles */
 :deep(.ce-toolbar) {
-  z-index: 1000 !important; /* Ensure toolbar appears above other elements */
-  position: absolute !important;
-  background: transparent !important;
+  z-index: 1000 !important;
+  position: fixed !important;
+  background: transparent !important; /* Make overall toolbar background transparent */
+  border-radius: 4px !important;
+  padding: 4px !important;
+  margin-top: -40px !important;
+  display: flex !important;
+  justify-content: flex-end !important; /* Align buttons to the right */
+  width: 100% !important; /* Allow full width for right alignment */
 
   /* Ensure toolbar actions are visible */
   .ce-toolbar__actions {
-    position: absolute !important;
-    right: 0 !important;
-    top: 0 !important;
+    position: relative !important;
     display: flex !important;
     padding: 0 !important;
+    gap: 4px !important;
+    background: transparent !important;
   }
 }
 
+/* Style individual buttons with their own backgrounds */
 :deep(.ce-toolbar__plus) {
   z-index: 1000 !important;
   background-color: white !important;
-  border-radius: 50% !important;
+  border-radius: 4px !important;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
-  width: 26px !important;
-  height: 26px !important;
+  width: 32px !important;
+  height: 32px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   margin-right: 5px !important;
+
+  &:hover {
+    background-color: #f5f5f5 !important;
+  }
 }
 
 :deep(.ce-toolbar__settings-btn) {
   z-index: 1000 !important;
   background-color: white !important;
-  border-radius: 50% !important;
+  border-radius: 4px !important;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
-  width: 26px !important;
-  height: 26px !important;
+  width: 32px !important;
+  height: 32px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+
+  &:hover {
+    background-color: #f5f5f5 !important;
+  }
+}
+
+/* Ensure settings panel appears above content */
+:deep(.ce-settings) {
+  position: fixed !important;
+  left: auto !important;
+  top: auto !important;
+  background-color: white !important;
+  border-radius: 4px !important;
+  box-shadow: 0 3px 15px -3px rgba(13, 20, 33, 0.13) !important;
+  z-index: 1002 !important;
+  margin-top: 4px !important;
+}
+
+/* Ensure inline toolbar appears above content */
+:deep(.ce-inline-toolbar) {
+  position: fixed !important;
+  z-index: 1003 !important;
+  background-color: white !important;
+  border-radius: 4px !important;
+  box-shadow: 0 3px 15px -3px rgba(13, 20, 33, 0.13) !important;
+  padding: 4px !important;
 }
 
 :deep(.ce-conversion-toolbar) {
@@ -2798,5 +2835,39 @@ watch(
   border: 2px solid #2196f3 !important;
   box-shadow: 0 0 0 1px #2196f3, 0 2px 4px rgba(0, 0, 0, 0.1) !important;
   cursor: move !important;
+}
+
+/* Table styles for EditorJS */
+:deep(.tc-table) {
+  border-collapse: collapse !important;
+  width: 100% !important;
+}
+
+:deep(.tc-row) {
+  border-bottom: 0.5px solid #888888 !important; /* Thinner border between rows */
+}
+
+:deep(.tc-cell) {
+  border: 0.5px solid #888888 !important; /* Thinner border for cells */
+  padding: 8px !important;
+  min-width: 100px !important;
+}
+
+/* Style for table header cells */
+:deep(.tc-row:first-child .tc-cell) {
+  background-color: #f5f5f5 !important;
+  font-weight: bold !important;
+  border-bottom: 1px solid #888888 !important; /* Keep header border slightly thicker for emphasis */
+}
+
+/* Hover effect for better cell selection visibility */
+:deep(.tc-cell:hover) {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Selected cell style */
+:deep(.tc-cell--selected) {
+  background-color: rgba(33, 150, 243, 0.1) !important;
+  border: 2px solid #2196f3 !important;
 }
 </style>

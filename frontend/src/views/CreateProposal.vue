@@ -46,7 +46,7 @@ const tools = [
     color: "#4CAF50",
     action: "addBackground",
   },
-  { icon: "mdi-table", label: "Table", color: "#FF9800", action: "addTable" },
+  //{ icon: "mdi-table", label: "Table", color: "#FF9800", action: "addTable" },
   {
     icon: "mdi-shape-outline",
     label: "Shape",
