@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const Proposal = require('../models/Proposal')
 
 const app = express();
-const PORT = 3001;
+const PORT = 4000;
 
 // Middleware
 app.use(cors());
