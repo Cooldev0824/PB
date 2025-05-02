@@ -46,6 +46,12 @@ const shapeTools = [
     type: "circle",
     color: "#9C27B0",
   },
+  {
+    icon: "mdi-triangle-outline",
+    label: "Triangle",
+    type: "triangle",
+    color: "#9C27B0",
+  },
 ];
 
 const tools = [
