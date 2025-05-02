@@ -1695,9 +1695,9 @@ const getSelectedBlockBackgroundColor = () => {
 
 // Set the background color of the selected block
 const setBlockBackgroundColor = (event) => {
-  if (!selectedBlockId.value) return;
+  if (!contextMenuBlockId.value) return;
 
-  const block = textBlocks.value.find((b) => b.id === selectedBlockId.value);
+  const block = textBlocks.value.find((b) => b.id === contextMenuBlockId.value);
   if (!block) return;
 
   // Set the block's background color
