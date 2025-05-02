@@ -92,6 +92,12 @@ const contextMenuBlockId = ref(null);
 const editorHasFocus = ref(false); // Track if the editor has focus
 const selectedPageSize = ref(props.pageSize); // Track the selected page size
 
+// Add these new refs after other ref declarations
+const shapes = ref([]);
+const isDrawingShape = ref(false);
+const currentShapeType = ref(null);
+const shapeStartPos = ref({ x: 0, y: 0 });
+
 // Now add the watch after all refs are declared
 watch(
   () => props.modelValue,
@@ -602,21 +608,40 @@ onUnmounted(() => {
 });
 
 const handleMouseDown = (e) => {
-  if (props.action !== "addText") return;
+  if (!props.action?.startsWith("addShape_")) {
+    if (props.action === "addText") {
+      // Existing text block logic
+      const isTextBlock = e.target.closest(".text-block");
+      if (isTextBlock) return;
 
-  const isTextBlock = e.target.closest(".text-block");
-  if (isTextBlock) return;
+      selectedBlockId.value = null;
+      const rect = documentPage.value.getBoundingClientRect();
+      isSelecting.value = true;
+      startX.value = e.clientX - rect.left;
+      startY.value = e.clientY - rect.top;
 
-  selectedBlockId.value = null;
+      selectionArea.value = {
+        x: startX.value,
+        y: startY.value,
+        width: 0,
+        height: 0,
+      };
+    }
+    return;
+  }
 
   const rect = documentPage.value.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  isDrawingShape.value = true;
+  currentShapeType.value = props.action.replace("addShape_", "");
+  shapeStartPos.value = { x, y };
   isSelecting.value = true;
-  startX.value = e.clientX - rect.left;
-  startY.value = e.clientY - rect.top;
 
   selectionArea.value = {
-    x: startX.value,
-    y: startY.value,
+    x,
+    y,
     width: 0,
     height: 0,
   };
@@ -635,12 +660,22 @@ const handleMouseMove = (e) => {
 
   // Update selection area if selecting
   if (isSelecting.value) {
-    selectionArea.value = {
-      x: Math.min(startX.value, currentX),
-      y: Math.min(startY.value, currentY),
-      width: Math.abs(currentX - startX.value),
-      height: Math.abs(currentY - startY.value),
-    };
+    if (isDrawingShape.value) {
+      selectionArea.value = {
+        x: Math.min(shapeStartPos.value.x, currentX),
+        y: Math.min(shapeStartPos.value.y, currentY),
+        width: Math.abs(currentX - shapeStartPos.value.x),
+        height: Math.abs(currentY - shapeStartPos.value.y),
+      };
+    } else {
+      // Existing text block selection logic
+      selectionArea.value = {
+        x: Math.min(startX.value, currentX),
+        y: Math.min(startY.value, currentY),
+        width: Math.abs(currentX - startX.value),
+        height: Math.abs(currentY - startY.value),
+      };
+    }
   }
 };
 
@@ -653,31 +688,50 @@ const handleMouseUp = () => {
     return;
   }
 
-  // Find the highest z-index currently in use
-  const highestZIndex =
-    textBlocks.value.length > 0
-      ? Math.max(...textBlocks.value.map((block) => block.zIndex || 0))
-      : 0;
+  if (isDrawingShape.value) {
+    // Create new shape
+    const newShape = {
+      id: Date.now(),
+      type: currentShapeType.value,
+      ...selectionArea.value,
+      zIndex:
+        Math.max(
+          ...[...shapes.value, ...textBlocks.value].map(
+            (item) => item.zIndex || 0
+          ),
+          0
+        ) + 10,
+    };
+    shapes.value.push(newShape);
 
-  const newBlock = {
-    id: Date.now(),
-    ...selectionArea.value,
-    isActive: true,
-    content: { blocks: [] },
-    zIndex: highestZIndex + 10, // New blocks are placed on top with a significant z-index increment
-    backgroundColor: "transparent", // Default to transparent background
-  };
+    // Reset shape drawing state
+    isDrawingShape.value = false;
+    currentShapeType.value = null;
+  } else if (props.action === "addText") {
+    // Existing text block creation logic
+    const highestZIndex =
+      textBlocks.value.length > 0
+        ? Math.max(...textBlocks.value.map((block) => block.zIndex || 0))
+        : 0;
 
-  console.log("Created new block with z-index:", newBlock.zIndex);
+    const newBlock = {
+      id: Date.now(),
+      ...selectionArea.value,
+      isActive: true,
+      content: { blocks: [] },
+      zIndex: highestZIndex + 10,
+      backgroundColor: "transparent",
+    };
 
-  textBlocks.value.push(newBlock);
-  selectBlock(textBlocks.value[textBlocks.value.length - 1].id);
+    textBlocks.value.push(newBlock);
+    selectBlock(textBlocks.value[textBlocks.value.length - 1].id);
+
+    nextTick(() => {
+      createEditor(newBlock.id);
+    });
+  }
+
   selectionArea.value = { x: 0, y: 0, width: 0, height: 0 };
-
-  // Create editor after Vue updates the DOM
-  nextTick(() => {
-    createEditor(newBlock.id);
-  });
 };
 
 const updateBlockContent = (id, content) => {
@@ -1865,7 +1919,53 @@ watch(
         width: `${containerWidth}px`,
         height: `${containerHeight}px`,
         margin: '0 auto',
-      }">
+      }"
+    >
+      <!-- Shapes -->
+      <div
+        v-for="shape in shapes"
+        :key="shape.id"
+        class="shape"
+        :style="{
+          position: 'absolute',
+          left: `${shape.x}px`,
+          top: `${shape.y}px`,
+          width: `${shape.width}px`,
+          height: `${shape.height}px`,
+          backgroundColor:
+            shape.type !== 'triangle' ? 'rgba(156, 39, 176, 0.1)' : 'none',
+          borderRadius: shape.type === 'circle' ? '50%' : '0',
+          clipPath: shape.type === 'triangle' ? 'none' : 'none',
+          zIndex: shape.zIndex || 0,
+          pointerEvents: 'none',
+        }"
+      >
+        <!-- Triangle element -->
+        <div
+          v-if="shape.type === 'triangle'"
+          :style="{
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+            overflow: 'hidden',
+          }"
+        >
+          <div
+            :style="{
+              position: 'absolute',
+              top: '0',
+              left: '0',
+              width: '100%',
+              height: '100%',
+              clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
+              backgroundColor: 'rgba(156, 39, 176, 0.1)',
+              border: 'none',
+              boxSizing: 'border-box',
+            }"
+          ></div>
+        </div>
+      </div>
+
       <!-- Text Blocks -->
       <div v-for="block in textBlocks" :key="block.id" class="block-wrapper" :style="{ 'z-index': block.zIndex || 0 }">
         <draggable-resizable-vue class="resizable-content" :class="{
@@ -1929,21 +2029,27 @@ watch(
         </draggable-resizable-vue>
       </div>
 
-      <!-- Selection Area -->
-      <div v-if="isSelecting" class="selection-area" :style="{
-        left: `${selectionArea.x}px`,
-        top: `${selectionArea.y}px`,
-        width: `${selectionArea.width}px`,
-        height: `${selectionArea.height}px`,
-      }"></div>
-
-      <!-- Selection Area -->
-      <div v-if="isSelecting" class="selection-area" :style="{
-        left: `${selectionArea.x}px`,
-        top: `${selectionArea.y}px`,
-        width: `${selectionArea.width}px`,
-        height: `${selectionArea.height}px`,
-      }"></div>
+      <!-- Selection Area (updated for shapes) -->
+      <div
+        v-if="isSelecting"
+        class="selection-area"
+        :style="{
+          left: `${selectionArea.x}px`,
+          top: `${selectionArea.y}px`,
+          width: `${selectionArea.width}px`,
+          height: `${selectionArea.height}px`,
+          borderRadius: currentShapeType === 'circle' ? '50%' : '0',
+          clipPath:
+            currentShapeType === 'triangle'
+              ? 'polygon(50% 0%, 0% 100%, 100% 100%)'
+              : 'none',
+          background:
+            currentShapeType === 'triangle'
+              ? 'rgba(156, 39, 176, 0.1)'
+              : 'rgba(156, 39, 176, 0.1)',
+          border: '2px dashed #9c27b0',
+        }"
+      ></div>
 
       <!-- Ruler Component -->
       <EditorRuler v-if="!props.readonly" v-model:showGrid="props.showGrid" :zoom="props.zoom"
@@ -2239,9 +2345,22 @@ watch(
 
 .selection-area {
   position: absolute;
-  border: 2px dashed #1976d2;
-  background: rgba(25, 118, 210, 0.1);
+  border: 2px dashed #9c27b0;
+  background: rgba(156, 39, 176, 0.1);
   pointer-events: none;
+}
+
+.shape {
+  pointer-events: none;
+}
+
+:deep(.codex-editor) {
+  pointer-events: none;
+  box-sizing: border-box;
+
+  &[data-type="triangle"] {
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  }
 }
 
 :deep(.codex-editor) {
