@@ -1,7 +1,7 @@
-import { createStore } from 'vuex';
-import axios from 'axios';
+import { createStore } from "vuex";
+import axios from "axios";
 
-const API_URL = 'http://185.182.187.118:4000/api';
+const API_URL = "http://localhost:4000/api";
 
 const store = createStore({
   state: {
@@ -16,13 +16,15 @@ const store = createStore({
       state.proposals.push(proposal);
     },
     updateProposal(state, updatedProposal) {
-      const index = state.proposals.findIndex(p => p.id === updatedProposal.id);
+      const index = state.proposals.findIndex(
+        (p) => p.id === updatedProposal.id
+      );
       if (index !== -1) {
         state.proposals[index] = updatedProposal;
       }
     },
     deleteProposal(state, proposalId) {
-      state.proposals = state.proposals.filter(p => p.id !== proposalId);
+      state.proposals = state.proposals.filter((p) => p.id !== proposalId);
     },
     setCurrentProposal(state, proposal) {
       state.currentProposal = proposal;
@@ -32,65 +34,65 @@ const store = createStore({
     async fetchProposals({ commit }) {
       try {
         const response = await axios.get(`${API_URL}/proposals`);
-        commit('setProposals', response.data);
+        commit("setProposals", response.data);
       } catch (error) {
-        console.error('Error fetching proposals:', error);
+        console.error("Error fetching proposals:", error);
       }
     },
     async createProposalID({ commit }, proposal) {
       try {
         const response = await axios.post(`${API_URL}/proposalID`, proposal);
-        commit('addProposalID', response.data);
+        commit("addProposalID", response.data);
         return response.data; // Return the created proposal
       } catch (error) {
-        console.error('Error creating proposalID:', error);
+        console.error("Error creating proposalID:", error);
         throw error; // Re-throw the error to handle it in the component
       }
     },
     async updateProposal({ commit }, { id, content, background, pageSize }) {
       try {
         const response = await fetch(`${API_URL}/proposals/${id}`, {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ id, content, background, pageSize }),
         });
 
         if (!response.ok) {
-          throw new Error('Failed to update proposal');
+          throw new Error("Failed to update proposal");
         }
 
         console.log(response.body);
         const updatedProposal = await response.json();
         return updatedProposal;
       } catch (error) {
-        console.error('Error updating proposal:', error);
+        console.error("Error updating proposal:", error);
         throw error;
       }
     },
     async deleteProposal({ commit }, id) {
       try {
         await axios.delete(`${API_URL}/proposals/${id}`);
-        commit('deleteProposal', id);
+        commit("deleteProposal", id);
       } catch (error) {
-        console.error('Error deleting proposal:', error);
+        console.error("Error deleting proposal:", error);
       }
     },
     async getProposal({ commit }, id) {
       try {
         const response = await axios.get(`${API_URL}/proposals/${id}`);
-        commit('setCurrentProposal', response.data);
+        commit("setCurrentProposal", response.data);
         return response.data;
       } catch (error) {
-        console.error('Error fetching proposal:', error);
+        console.error("Error fetching proposal:", error);
         throw error;
       }
-    }
+    },
   },
   getters: {
-    allProposals: state => state.proposals,
-    currentProposal: state => state.currentProposal,
+    allProposals: (state) => state.proposals,
+    currentProposal: (state) => state.currentProposal,
   },
 });
 
