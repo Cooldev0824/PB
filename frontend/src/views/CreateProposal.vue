@@ -31,6 +31,28 @@ const renameDialog = ref(false);
 const editingSection = ref(null);
 const newSectionName = ref("");
 const previewPages = ref([]);
+const showShapeMenu = ref(false);
+
+const shapeTools = [
+  {
+    icon: "mdi-square-outline",
+    label: "Square",
+    type: "square",
+    color: "#9C27B0",
+  },
+  {
+    icon: "mdi-circle-outline",
+    label: "Circle",
+    type: "circle",
+    color: "#9C27B0",
+  },
+  {
+    icon: "mdi-triangle-outline",
+    label: "Triangle",
+    type: "triangle",
+    color: "#9C27B0",
+  },
+];
 
 const tools = [
   {
@@ -71,7 +93,9 @@ const tools = [
 ];
 
 const handleToolClick = (tool) => {
-  if (tool.action === "addBackground") {
+  if (tool.action === "addShape") {
+    showShapeMenu.value = !showShapeMenu.value;
+  } else if (tool.action === "addBackground") {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
@@ -90,6 +114,7 @@ const handleToolClick = (tool) => {
     input.click();
   } else {
     activeTool.value = tool.action;
+    showShapeMenu.value = false;
   }
 };
 
@@ -533,6 +558,31 @@ onMounted(async () => {
                 >
                   <v-icon>{{ tool.icon }}</v-icon>
                 </v-btn>
+                <!-- Shape Menu Tooltip: Only for the Shape tool -->
+                <div
+                  v-if="tool.action === 'addShape' && showShapeMenu"
+                  class="shape-menu"
+                >
+                  <template v-for="shape in shapeTools" :key="shape.type">
+                    <v-tooltip :text="shape.label" location="left">
+                      <template v-slot:activator="{ props }">
+                        <v-btn
+                          v-bind="props"
+                          icon
+                          variant="text"
+                          :color="shape.color"
+                          class="shape-button"
+                          @click="
+                            activeTool = `addShape_${shape.type}`;
+                            showShapeMenu = false;
+                          "
+                        >
+                          <v-icon>{{ shape.icon }}</v-icon>
+                        </v-btn>
+                      </template>
+                    </v-tooltip>
+                  </template>
+                </div>
               </template>
             </v-tooltip>
           </div>
@@ -740,5 +790,34 @@ onMounted(async () => {
   margin: 0;
   color: #333;
   font-size: 1.1em;
+}
+
+.shape-menu {
+  position: absolute;
+  right: 100%;
+  top: 24%;
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-right: 12px;
+  z-index: 1000;
+}
+
+.shape-button {
+  width: 40px;
+  height: 40px;
+}
+
+.shape-button:hover {
+  background-color: #f5f5f5;
+}
+
+/* Ensure the shape menu doesn't close when clicking shape buttons */
+.shape-menu {
+  pointer-events: auto;
 }
 </style>

@@ -30,6 +30,7 @@
     "axios": "^1.6.7",
     "draggable-resizable-vue3": "^1.0.94-beta",
     "editorjs-text-alignment-blocktune": "^1.0.3",
+    "editorjs-text-color-plugin": "^2.0.4",
     "html2pdf.js": "^0.10.3",
     "uuid": "^11.1.0",
     "vue": "^3.5.13",
